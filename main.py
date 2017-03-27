@@ -85,7 +85,7 @@ def main():
 	ast = ljd.ast.builder.build(prototype)
 
 	assert ast is not None
-
+	
 	ljd.ast.validator.validate(ast, warped=True)
 
 	ljd.ast.mutator.pre_pass(ast)
@@ -114,6 +114,8 @@ def main():
 
 			ljd.ast.validator.validate(ast, warped=False)
 
+
+       
 	ljd.lua.writer.write(sys.stdout, ast)
 
 	return 0

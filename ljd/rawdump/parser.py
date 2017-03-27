@@ -62,6 +62,7 @@ def _read_header(parser, header):
 	else:
 		parser.stream.data_byteorder = 'little'
 
+	parser.header = header  # TODO yzg
 	return True
 
 

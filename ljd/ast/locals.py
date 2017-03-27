@@ -147,10 +147,10 @@ class _LocalDefinitionsMarker(traverse.Visitor):
 	def _update_known_locals(self, local, addr):
 		varinfo = self._state().known_locals[local.slot]
 
-		self._state().known_locals[local.slot] = local._varinfo
-
 		if varinfo is None:
 			return False
+
+		self._state().known_locals[local.slot] = local._varinfo
 
 		if varinfo.end_addr <= addr:
 			return False

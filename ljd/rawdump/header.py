@@ -65,13 +65,13 @@ def _read_version(state, header):
 def _read_flags(parser, header):
 	bits = parser.stream.read_uleb128()
 
-	header.flags.is_big_endian = bits & _FLAG_IS_BIG_ENDIAN
+	header.flags.is_big_endian = bool(bits & _FLAG_IS_BIG_ENDIAN)
 	bits &= ~_FLAG_IS_BIG_ENDIAN
 
-	header.flags.is_stripped = bits & _FLAG_IS_STRIPPED
+	header.flags.is_stripped = bool(bits & _FLAG_IS_STRIPPED)
 	bits &= ~_FLAG_IS_STRIPPED
 
-	header.flags.has_ffi = bits & _FLAG_HAS_FFI
+	header.flags.has_ffi = bool(bits & _FLAG_HAS_FFI)
 	bits &= ~_FLAG_HAS_FFI
 
 	if bits != 0:
