@@ -36,6 +36,7 @@ import ljd.ast.slotworks
 import ljd.ast.unwarper
 import ljd.ast.mutator
 import ljd.lua.writer
+import ljd.util.log
 
 
 def dump(name, obj, level=0):
@@ -96,7 +97,10 @@ def decompile(file_in):
 
     # ljd.ast.validator.validate(ast, warped=True)
 
-    ljd.ast.slotworks.eliminate_temporary(ast)
+    try:
+        ljd.ast.slotworks.eliminate_temporary(ast)
+    except:
+        None
 
     # ljd.ast.validator.validate(ast, warped=True)
 
@@ -112,11 +116,13 @@ def decompile(file_in):
 
             ljd.ast.mutator.primary_pass(ast)
 
-            ljd.ast.validator.validate(ast, warped=False)
+            try:
+                ljd.ast.validator.validate(ast, warped=False)
+            except:
+                print("Validate error.", file=sys.stdout)
 
 
     # Save file
-
     if file_in[-5:] == ".luac":
         file_out = file_in[:-5] + ".lua"
     else:
@@ -147,6 +153,11 @@ def main():
         print("="*10 + "\nFailed files: ")
         for f in files_failed:
             print("\t" + f)
+
+        ok = file_num - len(files_failed)
+        rate = ok*100.0/file_num
+        print("\n" + "="*10)
+        print(str(file_num-len(files_failed)) + " of " + str(file_num) + " decompiled(" + str(rate) + "%).")
 
 if __name__ == "__main__":
     retval = main()

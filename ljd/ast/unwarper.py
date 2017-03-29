@@ -29,16 +29,30 @@ class _StatementsCollector(traverse.Visitor):
 def unwarp(node):
     # There could be many negative jumps within while conditions, so
     # filter them first
-    try:
+    try: # TODO(yzg)
         _run_step(_unwarp_loops, node, repeat_until=False)
-        _run_step(_unwarp_loops, node, repeat_until=True)
+    except:
+        None
 
+    try:
+        _run_step(_unwarp_loops, node, repeat_until=True)
+    except:
+        None
+
+    try:
         _run_step(_unwarp_expressions, node)
+    except:
+        None
+
+    try:
         _run_step(_unwarp_ifs, node)
     except:
         None
-    finally:
+
+    try:
         _glue_flows(node)
+    except:
+        None
 
 
 

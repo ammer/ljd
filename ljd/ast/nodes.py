@@ -25,11 +25,26 @@ class FunctionDefinition():
 
 
 class TableConstructor():
+    anti_loop = set()
+    cur_visitor = None
+
     def __init__(self):
         self.array = RecordsList()
         self.records = RecordsList()
 
     def _accept(self, visitor):
+        if TableConstructor.cur_visitor != None:
+            if TableConstructor.cur_visitor != visitor:
+                TableConstructor.cur_visitor = visitor
+                TableConstructor.anti_loop.clear()
+        else:
+            TableConstructor.cur_visitor = visitor
+
+        if self in TableConstructor.anti_loop:
+            return
+
+        TableConstructor.anti_loop.add(self)
+
         visitor._visit_node(visitor.visit_table_constructor, self)
 
         visitor._visit(self.array)
@@ -62,6 +77,9 @@ class TableRecord():
         visitor._visit(self.value)
 
         visitor._leave_node(visitor.leave_table_record, self)
+
+    #def __repr__(self):
+    #    return "{0}: {1}".format(str(self.key), str(self.value))
 
 
 class Assignment():
@@ -178,6 +196,9 @@ class RecordsList():
 
         visitor._leave_node(visitor.leave_records_list, self)
 
+    #def __str__(self):
+    #    return str(self.contents)
+
 
 class VariablesList():
     def __init__(self):
@@ -246,6 +267,9 @@ class TableElement():
 
     def __str__(self):
         return str(self.table) + "[" + str(self.key) + "]"
+
+    def __repr__(self):
+        return "{0}@{1}".format(str(self.key), str(self.table))
 
 class Vararg():
     def _accept(self, visitor):

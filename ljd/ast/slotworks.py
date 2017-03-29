@@ -207,7 +207,8 @@ def _eliminate_iterators(iterators):
             continue
 
         for i, slot in enumerate(assignment.destinations.contents):
-            assert warp.controls.contents[i].slot == slot.slot
+            if hasattr(warp.controls.contents[i], "slot"):
+                assert warp.controls.contents[i].slot == slot.slot
 
         warp.controls.contents = [src]
         processed_warps.add(warp)
