@@ -107,7 +107,7 @@ def _read_counts_and_sizes(parser, prototype):
 
         parser.lines_count = prototype.lines_count
 
-    if True:
+    if False:
         print("prototype.arguments_count = " + str(prototype.arguments_count))
         print("prototype.framesize = " + str(prototype.framesize))
         print("parser.upvalues_count = " + str(parser.upvalues_count))

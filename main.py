@@ -24,6 +24,8 @@
 #
 
 import sys
+import io
+import traceback
 
 import ljd.rawdump.parser
 import ljd.pseudoasm.writer
@@ -37,92 +39,117 @@ import ljd.lua.writer
 
 
 def dump(name, obj, level=0):
-	indent = level * '\t'
+    indent = level * '\t'
 
-	if name is not None:
-		prefix = indent + name + " = "
-	else:
-		prefix = indent
+    if name is not None:
+        prefix = indent + name + " = "
+    else:
+        prefix = indent
 
-	if isinstance(obj, (int, float, str)):
-		print(prefix + str(obj))
-	elif isinstance(obj, list):
-		print (prefix + "[")
+    if isinstance(obj, (int, float, str)):
+        print(prefix + str(obj))
+    elif isinstance(obj, list):
+        print (prefix + "[")
 
-		for value in obj:
-			dump(None, value, level + 1)
+        for value in obj:
+            dump(None, value, level + 1)
 
-		print (indent + "]")
-	elif isinstance(obj, dict):
-		print (prefix + "{")
+        print (indent + "]")
+    elif isinstance(obj, dict):
+        print (prefix + "{")
 
-		for key, value in obj.items():
-			dump(key, value, level + 1)
+        for key, value in obj.items():
+            dump(key, value, level + 1)
 
-		print (indent + "}")
-	else:
-		print (prefix + obj.__class__.__name__)
+        print (indent + "}")
+    else:
+        print (prefix + obj.__class__.__name__)
 
-		for key in dir(obj):
-			if key.startswith("__"):
-				continue
+        for key in dir(obj):
+            if key.startswith("__"):
+                continue
 
-			val = getattr(obj, key)
-			dump(key, val, level + 1)
+            val = getattr(obj, key)
+            dump(key, val, level + 1)
+
+
+def decompile(file_in):
+    header, prototype = ljd.rawdump.parser.parse(file_in)
+
+    if not prototype:
+        return 1
+
+    # TODO: args
+    # ljd.pseudoasm.writer.write(sys.stdout, header, prototype)
+
+    ast = ljd.ast.builder.build(prototype)
+
+    assert ast is not None
+
+    ljd.ast.validator.validate(ast, warped=True)
+
+    ljd.ast.mutator.pre_pass(ast)
+
+    # ljd.ast.validator.validate(ast, warped=True)
+
+    ljd.ast.locals.mark_locals(ast)
+
+    # ljd.ast.validator.validate(ast, warped=True)
+
+    ljd.ast.slotworks.eliminate_temporary(ast)
+
+    # ljd.ast.validator.validate(ast, warped=True)
+
+    if True:
+        ljd.ast.unwarper.unwarp(ast)
+
+        # ljd.ast.validator.validate(ast, warped=False)
+
+        if True:
+            ljd.ast.locals.mark_local_definitions(ast)
+
+            # ljd.ast.validator.validate(ast, warped=False)
+
+            ljd.ast.mutator.primary_pass(ast)
+
+            ljd.ast.validator.validate(ast, warped=False)
+
+
+    # Save file
+
+    if file_in[-5:] == ".luac":
+        file_out = file_in[:-5] + ".lua"
+    else:
+        file_out = file_in + ".lua"
+
+    ljd.lua.writer.write(io.open(file_out, "w"), ast)
+    ljd.lua.writer.write(sys.stdout, ast)
+
+    return 0
 
 
 def main():
-	file_in = sys.argv[1]
+    file_ins = sys.argv[1:]
+    file_num = len(file_ins)
+    files_failed = []
 
-	header, prototype = ljd.rawdump.parser.parse(file_in)
+    for file_in in file_ins:
+        try:
+            decompile(file_in)
+        except BaseException as e:
+            if file_num == 1:
+                print("\n" + "="*10 + file_in + "="*10)
+                traceback.print_exc()
+            else:
+                files_failed.append(file_in)
 
-	if not prototype:
-		return 1
-
-	# TODO: args
-	# ljd.pseudoasm.writer.write(sys.stdout, header, prototype)
-
-	ast = ljd.ast.builder.build(prototype)
-
-	assert ast is not None
-	
-	ljd.ast.validator.validate(ast, warped=True)
-
-	ljd.ast.mutator.pre_pass(ast)
-
-	# ljd.ast.validator.validate(ast, warped=True)
-
-	ljd.ast.locals.mark_locals(ast)
-
-	# ljd.ast.validator.validate(ast, warped=True)
-
-	ljd.ast.slotworks.eliminate_temporary(ast)
-
-	# ljd.ast.validator.validate(ast, warped=True)
-
-	if True:
-		ljd.ast.unwarper.unwarp(ast)
-
-		# ljd.ast.validator.validate(ast, warped=False)
-
-		if True:
-			ljd.ast.locals.mark_local_definitions(ast)
-
-			# ljd.ast.validator.validate(ast, warped=False)
-
-			ljd.ast.mutator.primary_pass(ast)
-
-			ljd.ast.validator.validate(ast, warped=False)
-
-
-       
-	ljd.lua.writer.write(sys.stdout, ast)
-
-	return 0
-
+    if file_num > 1 and len(files_failed) > 0:
+        print("="*10 + "\nFailed files: ")
+        for f in files_failed:
+            print("\t" + f)
 
 if __name__ == "__main__":
-	retval = main()
-	sys.exit(retval)
+    retval = main()
+    sys.exit(retval)
 
 # vim: ts=8 noexpandtab nosmarttab softtabstop=8 shiftwidth=8
